@@ -193,4 +193,3 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Tank
   ShowTopMostFoldoutHeaderGroup: 1
-  Hp: 0

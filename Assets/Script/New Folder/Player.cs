@@ -3,7 +3,6 @@ using UnityEngine;
 
 public class Player : Entity
 {
-    public NetworkVariable<float> NetworkCD = new NetworkVariable<float>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     protected InputSystem_Actions Controls;
     protected Vector2 MoveInput;
     protected float Cooldown = 5f;
@@ -21,7 +20,6 @@ public class Player : Entity
         if (!IsOwner) return;
         MoveInput = Controls.Player.Move.ReadValue<Vector2>();
         Class();
-        UpdateCooldownServerRpc(CanCast > Time.time ? CanCast - Time.time : 0f);
     }
     protected override void FixedUpdate()
     {
@@ -70,17 +68,14 @@ public class Player : Entity
             }
         }
     }
-    [ServerRpc]
-    void UpdateCooldownServerRpc(float currentCd)
-    {
-        NetworkCD.Value = currentCd;
-    }
+
     [ServerRpc]
     void RequestAtkServerRpc(ulong targetId, Vector3 direction)
     {
         // ส่งสัญญาณไปหา Client ทุกเครื่อง (รวมถึง Host) ว่าให้จัดการแรงผลักตัวละครตัวนี้
         ApplyAtkEffectClientRpc(targetId, direction);
     }
+
     [ClientRpc]
     void ApplyAtkEffectClientRpc(ulong targetId, Vector3 direction)
     {

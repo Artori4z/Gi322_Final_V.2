@@ -6,7 +6,7 @@ public class Dash : Player
     private float dashForce = 10f;
     protected override void Start()
     {
-        MaxHp = 100;
+        Hp = 100;
         Speed = 10f;
         Def = 1;
         AtkPower = 20;
