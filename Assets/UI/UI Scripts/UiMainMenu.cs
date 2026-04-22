@@ -8,9 +8,9 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
 
-public class MainMenu : MonoBehaviour
+public class UiMainMenu : MonoBehaviour
 {
-    public GameObject Option, Menu, Muti, Play, Host, Client;
+    public GameObject Option, Menu, Play, Host, Client;
     [Header("Relay UI")]
     public TMP_InputField joinCodeInput;
     [Header("Spawn Settings")]
@@ -41,7 +41,6 @@ public class MainMenu : MonoBehaviour
         Menu.SetActive(panelToShow == Menu);
         Client.SetActive(panelToShow == Client);
         Host.SetActive(panelToShow == Host);
-        Muti.SetActive(panelToShow == Muti);
         Option.SetActive(panelToShow == Option);
         Play.SetActive(panelToShow == Play);
     }
@@ -101,7 +100,6 @@ public class MainMenu : MonoBehaviour
     public void ClientButton() => ShowPanel(Client);
     public void HostButton() => ShowPanel(Host);
     public void Options() => ShowPanel(Option);
-    public void Multiplayer() => ShowPanel(Muti);
     public void MainMenuButton() => ShowPanel(Menu);
     public void PlayButton() => ShowPanel(Play);
     public void QuitGame() => Application.Quit();

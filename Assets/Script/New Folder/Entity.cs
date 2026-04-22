@@ -7,7 +7,7 @@ public class Entity : NetworkBehaviour
 {
     [SerializeField] private GameObject winUI;
     [SerializeField] private GameObject loseUI;
-    [SerializeField] protected int Hp;
+    public NetworkVariable<int> Hp = new NetworkVariable<int>(100, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     protected float Speed;
     protected int Def;
     protected int AtkPower;
@@ -15,6 +15,8 @@ public class Entity : NetworkBehaviour
     protected StopHelper helper;
     protected Vector3 currentVelocity;
     protected float SmoothTime;
+    public bool isDead = false;
+    public bool GameStart = false;
     protected virtual void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -42,85 +44,34 @@ public class Entity : NetworkBehaviour
         helper.ResetAfter(1f);
     }
     protected virtual void Move() { }
-    public void TakeDamage(int damage)
+    [ServerRpc(RequireOwnership = false)]
+    public void TakeDamageServerRpc(int damage)
     {
-        // คำนวณพลังป้องกันตรงนี้เลย
-        int finalDamage = damage - Def;
-        if (finalDamage < 0) finalDamage = 0;
-
-        Hp -= finalDamage;
-
-        // เช็คตายที่ Server
-        if (IsServer && Hp <= 0)
+        if (GameStart)
         {
-            Die();
+            if (isDead) return; // ถ้าตายแล้ว ไม่ต้องทำข้างล่างซ้ำ
+
+            Hp.Value -= damage;
+
+            if (Hp.Value <= 0)
+            {
+                isDead = true; // ล็อคไว้ทันทีว่าคนนี้ตายแล้วนะ
+                Hp.Value = 0;
+
+                if (InGameController.Instance != null)
+                {
+                    InGameController.Instance.OnPlayerDie(OwnerClientId);
+                }
+            }
         }
+        
     }
     protected void Die()
     {
-        if (!IsServer) return;
-
-        // ส่ง ID ของคนที่ตายไปทุกเครื่อง
-        HandleGameEndClientRpc(OwnerClientId);
+        if (IsServer)
+        {
+            // ค้นหา InGameController ในฉากแล้วบอกว่าฉันตายแล้ว
+            FindObjectOfType<InGameController>().OnPlayerDie(OwnerClientId);
+        }
     }
-
-    [ClientRpc]
-    void HandleGameEndClientRpc(ulong deadClientId)
-    {
-        StartCoroutine(LoadResultScene(deadClientId));
-    }
-
-    IEnumerator LoadResultScene(ulong deadClientId)
-    {
-        yield return new WaitForSeconds(1f);
-
-        if (NetworkManager.Singleton.LocalClientId == deadClientId)
-            SceneManager.LoadScene("!LoseScene");
-        else
-            SceneManager.LoadScene("!WinScene");
-    }
-    //protected void Die()
-    //{
-    //    // 1. ต้องให้ Server เป็นคนตัดสินเท่านั้น เพื่อป้องกัน Client คำนวณพลาด
-    //    if (!IsServer) return;
-
-    //    // 2. เช็คว่า "เจ้าของ" ของตัวละครที่กำลังตายนี้คือใคร
-    //    // ถ้า OwnerClientId == 0 โดยปกติคือ Host
-    //    if (OwnerClientId == NetworkManager.Singleton.LocalClientId)
-    //    {
-    //        // ถ้าคนตายคือคนที่มี ID เดียวกับ Server/Host
-    //        AnnounceWinnerClientRpc("Player 2 Wins!");
-    //    }
-    //    else
-    //    {
-    //        // ถ้าคนตายไม่ใช่ Host (ก็คือ Client)
-    //        AnnounceWinnerClientRpc("Player 1 Wins!");
-    //    }
-
-    //    // 3. ลบตัวละครออกจากระบบ Network
-    //    GetComponent<NetworkObject>().Despawn();
-    //}
-
-
-    //[ClientRpc]
-    //private void AnnounceWinnerClientRpc(string message)
-    //{
-    //    // แสดงผลบนหน้าจอของทุกคน
-    //    Debug.Log(message);
-    //    // ตัวอย่าง: WinText.text = message;
-    //}
-
-
-
-    //protected void Die()
-    //{
-    //    if (!IsServer) return;
-
-    //    // ส่ง ID ของคนที่ตายไปให้ทุก Client
-    //    ShowResultClientRpc(OwnerClientId);
-
-    //    // ลบตัวละครออก
-    //    GetComponent<NetworkObject>().Despawn();
-    //}
-
 }

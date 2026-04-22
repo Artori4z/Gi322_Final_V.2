@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using Unity.Netcode;
+using UnityEngine;
+using static UnityEngine.UI.GridLayoutGroup;
 
 public class Jumper : Player
 {
@@ -6,7 +8,10 @@ public class Jumper : Player
     private bool isGrounded;
     protected override void Start()
     {
-        Hp = 100;
+        if (IsOwner)
+        {
+            RequestInitializeStatsServerRpc();
+        }
         Speed = 10f;
         Def = 1;
         AtkPower = 20;
@@ -14,21 +19,22 @@ public class Jumper : Player
     }
     protected override void Class()
     {
-        if (Controls.Player.Jump.WasPressedThisFrame() && isGrounded && Time.time >= CanCast)
+        if (Controls.Player.Jump.WasPressedThisFrame() && isGrounded && Cooldown.Value >= CanCast)
         {
             Jump();
-            CanCast = Time.time + Cooldown;
+            ResetCooldownServerRpc();
         }
     }
     private void Jump()
     {
         rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         isGrounded = false;
+        
     }
     protected override void FixedUpdate()
     {
         base.FixedUpdate();
-        if (Hp <= 0)
+        if (IsOwner && Hp.Value <= 0)
         {
             Die();
         }
@@ -42,4 +48,5 @@ public class Jumper : Player
             isGrounded = true;
         }
     }
+    
 }
